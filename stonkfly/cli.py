@@ -56,6 +56,41 @@ def main():
         choices=["BTC-USDC", "ETH-USDC", "SOL-USDC"],
     )
     run.add_argument("--neural-ms", type=float, default=500)
+    run.add_argument(
+        "--replay",
+        type=Path,
+        help="Paper-only: replay a recorded market tape; its time is the clock",
+    )
+    run.add_argument(
+        "--policy",
+        choices=["fly", "random"],
+        default="fly",
+        help="random = coin-flip control with no neural network (needs --replay)",
+    )
+    run.add_argument(
+        "--match",
+        type=Path,
+        help="random: shuffle this fly run's exact BUY/SELL/HOLD proposals",
+    )
+    run.add_argument("--buy-rate", type=float, help="random: P(BUY) per observation")
+    run.add_argument("--sell-rate", type=float, help="random: P(SELL) per observation")
+    run.add_argument("--seed", type=int, default=0, help="random: seed")
+    tape = sub.add_parser("tape", help="Record a market tape for replay")
+    tape.add_argument("--out", type=Path, required=True)
+    tape.add_argument(
+        "--products",
+        nargs="+",
+        default=["BTC-USDC"],
+        choices=["BTC-USDC", "ETH-USDC", "SOL-USDC"],
+    )
+    tape.add_argument("--minutes", type=int, help="Live: record this many 1-minute observations")
+    tape.add_argument("--start", help="Candles: UTC start, e.g. 2026-10-01T00:00Z")
+    tape.add_argument("--end", help="Candles: UTC end (exclusive)")
+    tape.add_argument(
+        "--half-spread",
+        default="0.0001",
+        help="Candles only: bid/ask = close -/+ this fraction (no order book in candles)",
+    )
     status = sub.add_parser("status")
     status.add_argument("--out", type=Path, default=Path("runs/paper"))
     a = p.parse_args()
@@ -70,6 +105,26 @@ def main():
             prepare(a.reuse_doomfly)
         else:
             print(json.dumps(verify()))
+        return
+    if a.command == "tape":
+        from .market import utc_timestamp
+        from .replay import from_candles, record
+
+        if (a.minutes is None) == (a.start is None and a.end is None):
+            p.error("Use --minutes (live) or --start/--end (past candles)")
+        if a.minutes is not None:
+            n = record(tuple(a.products), a.out, a.minutes, interval=60)
+        else:
+            if not a.start or not a.end:
+                p.error("Candles need both --start and --end")
+            n = from_candles(
+                tuple(a.products),
+                utc_timestamp(a.start),
+                utc_timestamp(a.end),
+                a.out,
+                a.half_spread,
+            )
+        print(json.dumps({"tape": str(a.out), "observations": n}))
         return
     if a.command == "status":
         import sqlite3
@@ -94,8 +149,19 @@ def main():
             )
         )
         return
-    if a.live and (a.fixture or a.fast):
-        p.error("Live mode forbids fixtures and fast replay")
+    if a.live and (a.fixture or a.fast or a.replay or a.policy != "fly"):
+        p.error("Live mode forbids fixtures, fast replay, tapes and control policies")
+    if a.fixture and a.replay:
+        p.error("Choose --fixture or --replay")
+    if a.policy == "random":
+        if not a.replay:
+            p.error("A random control needs --replay so it sees the same market tape")
+        if (a.match is None) == (a.buy_rate is None and a.sell_rate is None):
+            p.error("Random control: give --match RUN or --buy-rate/--sell-rate")
+        if a.match is None and (a.buy_rate is None or a.sell_rate is None):
+            p.error("Give both --buy-rate and --sell-rate")
+    elif a.match or a.buy_rate is not None or a.sell_rate is not None:
+        p.error("--match and rates apply only to --policy random")
     if a.steps < 0:
         p.error("steps cannot be negative")
     settings = Settings(
@@ -134,45 +200,70 @@ def main():
             ledger.put("halted", None)
         if a.preflight_only:
             return
-        from .data import verify
+        verified = None
+        if a.policy == "fly":
+            from .data import verify
 
-        verified = verify()
-        if a.live and "scramble" in verified:
-            raise SystemExit("A scrambled-wiring control graph is paper-only.")
+            verified = verify()
+            if a.live and "scramble" in verified:
+                raise SystemExit("A scrambled-wiring control graph is paper-only.")
         from PIL import Image
 
         from .actions import StonkflyActions
         from .display import market_frame
         from .market import CoinbaseMarket, FixtureMarket
-        from .neural.controller import FlyController
         from .reinforcement import reinforcement
         from .risk import Guard, Veto
 
-        market = (
-            FixtureMarket(settings.products)
-            if a.fixture
-            else CoinbaseMarket(settings.products)
-        )
+        if a.replay:
+            from .replay import ReplayMarket, TapeEnd
+
+            market = ReplayMarket(a.replay, settings.products)
+        else:
+            TapeEnd = ()
+            market = (
+                FixtureMarket(settings.products)
+                if a.fixture
+                else CoinbaseMarket(settings.products)
+            )
         previous = ledger.get("observation")
         if previous:
             market.history = previous["market_history"]
-            if a.fixture:
+            if a.fixture or a.replay:
                 market.tick = previous["fixture_tick"]
-        controller = FlyController(settings)
+        if a.policy == "random":
+            from .control import RandomController, matched_proposals
+
+            controller = RandomController(
+                a.seed,
+                sequence=matched_proposals(a.match, market.identity["sha256"])
+                if a.match
+                else None,
+                rates=None if a.match else (a.buy_rate, a.sell_rate),
+            )
+        else:
+            from .neural.controller import FlyController
+
+            controller = FlyController(settings)
         cp = ledger.get("checkpoint")
         if cp:
             path = out / cp["file"]
             if hashlib.sha256(path.read_bytes()).hexdigest() != cp["sha256"]:
                 raise RuntimeError("Checkpoint integrity mismatch")
             controller.restore(path)
+        fly = a.policy == "fly"
         provenance = {
             "settings": dataclasses.asdict(settings),
+            "policy": "fly connectome" if fly else controller.describe(),
             "dataset": verified,
-            "circuit": controller.brain.circuit["report"],
-            "vision": controller.brain.visual_report,
+            "circuit": controller.brain.circuit["report"] if fly else None,
+            "vision": controller.brain.visual_report if fly else None,
             "mode": broker.mode,
-            "feed": "fixture" if a.fixture else "coinbase-public",
-            "decoder": "DNp20 mean R-L: buy/sell; DNpe017 spike gate; otherwise hold. Engineered fixed mapping.",
+            "feed": "replay" if a.replay else "fixture" if a.fixture else "coinbase-public",
+            "tape": market.identity if a.replay else None,
+            "decoder": "DNp20 mean R-L: buy/sell; DNpe017 spike gate; otherwise hold. Engineered fixed mapping."
+            if fly
+            else None,
             "learning_validated": False,
             "pain_receptors_modeled": False,
             "timing": "Each observation advances configured neural_ms regardless of wall-market time; no claim of real-time fly physiology.",
@@ -193,7 +284,9 @@ def main():
             )
         ledger.put("provenance_sha256", signature)
         (out / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
-        guard = Guard(settings, ledger, out / "STOP")
+        guard = Guard(
+            settings, ledger, out / "STOP", clock=market.clock if a.replay else None
+        )
         provider = StonkflyActions(guard, broker)
         action = provider.get_actions()[0]
         count = 0
@@ -201,10 +294,17 @@ def main():
             started = time.monotonic()
             if (out / "STOP").exists() or ledger.get("halted"):
                 break
+            if getattr(controller, "done", lambda: False)():
+                print("Matched proposal sequence finished.", flush=True)
+                break
             broker.reconcile()
             broker.verify_balances()
-            quotes = market.snapshot()
-            guard.check(quotes, time.time())
+            try:
+                quotes = market.snapshot()
+            except TapeEnd:
+                print("Replay tape finished.", flush=True)
+                break
+            guard.check(quotes, guard.clock())
             market.record(quotes)
             product = settings.products[ledger.get("tick") % len(settings.products)]
             q = quotes[product]
@@ -236,7 +336,9 @@ def main():
             if neural["side"] != "HOLD":
                 try:
                     # Neural integration can be slow; use a fresh execution book.
-                    fresh = market.snapshot()
+                    fresh = (
+                        market.execution_snapshot() if a.replay else market.snapshot()
+                    )
                     latest = fresh[product]
                     if abs(latest.bid - q.bid) / q.bid > D(settings.slippage):
                         raise Veto("Price moved beyond neural observation tolerance")
@@ -247,6 +349,7 @@ def main():
             row = {
                 "tick": ledger.get("tick"),
                 "wall_time": time.time(),
+                "market_time": guard.clock(),
                 "product": product,
                 "mode": broker.mode,
                 "quote": q.json(),
@@ -269,13 +372,15 @@ def main():
                         "execution": order["status"],
                         "equity": str(equity),
                         "stimulus": kind,
-                        "plastic_edges_changed": neural["memory"]["changed_edges"],
+                        "plastic_edges_changed": neural.get("memory", {}).get(
+                            "changed_edges"
+                        ),
                     }
                 ),
                 flush=True,
             )
             count += 1
-            if not a.fast and (not a.steps or count < a.steps):
+            if not (a.fast or a.replay) and (not a.steps or count < a.steps):
                 until = started + settings.interval_seconds
                 while time.monotonic() < until and not (out / "STOP").exists():
                     time.sleep(min(1, until - time.monotonic()))

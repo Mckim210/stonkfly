@@ -4,7 +4,6 @@ The public Action objects are invoked directly by the fixed neural decoder.
 No LLM, general wallet tools, transfers, or AgentKit analytics decorator.
 """
 
-import time
 from typing import Literal
 
 from coinbase_agentkit import ActionProvider
@@ -43,5 +42,5 @@ class StonkflyActions(ActionProvider):
         plan = self.guard.plan(p.product, p.side, self.quotes)
         plan["neural_observation"] = self.guard.l.get("observation")
         plan["checkpoint"] = self.guard.l.get("checkpoint")
-        plan = self.guard.l.reserve(plan, time.time())
+        plan = self.guard.l.reserve(plan, self.guard.clock())
         return self.broker.execute(plan, self.guard.before_submit)

@@ -21,3 +21,5 @@ build/
 coinbase-key.json
 cdp_api_key.json
 *.partial
+data-scrambled-*/
+tapes/

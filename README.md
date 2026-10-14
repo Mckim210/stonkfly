@@ -8,6 +8,8 @@ A fly-connectome simulation that can operate a crypto trading account. Actual ne
 
 Positive portfolio P&L stimulates 15 identified PAM11 dopamine cells; negative P&L stimulates two PPL101 aversive dopamine cells. A candidate memory rule changes existing KC-to-MBON connections. These are engineered reinforcement signals, **not modeled pain receptors**. Synaptic changes do not establish that it learns to trade profitably. [Model and evidence](docs/model.md).
 
+To test skill against luck, replay one recorded market tape to the fly, scrambled-wiring flies and matched random traders: [control experiment](docs/experiment.md).
+
 ## Run it
 
 Python 3.11, a C++17 compiler, macOS/Linux. Allow several GB for the dataset and dependencies; 16 GB RAM recommended.
