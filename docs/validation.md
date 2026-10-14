@@ -31,3 +31,18 @@ python -m stonkfly run --fast --steps 6 --out runs/check-public
 The last command reads current public prices and simulates fills. Prices, signals and paper outcomes will differ. All runtime evidence stays local in `runs/`; it is not uploaded with this report. A normal `run` omits `--fast` and samples at the configured wall interval.
 
 Before claiming learned performance, implement the held-out replay, shuffled reinforcement, exposure baselines, retention and memory-reset comparisons described in [the model](model.md). This repository currently provides a functioning experimental loop, not that empirical result.
+
+## Wiring control (scrambled connectome)
+
+`python -m stonkfly.neural.scramble --seed N` writes a degree-preserving null-model graph to `data-scrambled-seedN/`. Same neurons, same per-edge synapse counts and signs, same in- and out-degree per neuron, and by default the same excitatory and inhibitory in-degree per neuron; only *who connects to whom* is randomized. Photoreceptor outputs and the KC/PAM11/PPL101 → MBON07/MBON11 memory edges are held fixed, so the eye, the plastic edge set and the dopamine gains match the real fly. `--mix-signs` gives the weaker plain degree-preserving shuffle.
+
+```sh
+python -m stonkfly.neural.scramble --seed 1
+STONKFLY_DATA=data-scrambled-seed1 python -m stonkfly run --out runs/scrambled-seed1
+```
+
+`verify` accepts the graph only if `scramble.lock.json` derives it from the locked MaleCNS arrays, and records `"wiring": "SCRAMBLED degree-preserving control"` in the run provenance. Scrambled graphs refuse `--live`.
+
+Checked on 2026-10-14 against a synthetic MaleCNS-sized graph (166,700 neurons, 25,582,938 edges, lognormal hubs up to ~40,000 partners): 20 s, 2.6 GB peak memory, 5 repair rounds, zero duplicate pairs, all invariants held. **Not yet run on the real MaleCNS graph**, whose hub structure may need more repair rounds.
+
+What it does not establish: incoming synaptic strength per neuron is not preserved, so compare total spike counts between real and scrambled runs before attributing a performance difference to wiring. Use several seeds, and expose real and scrambled runs to the same market data.

@@ -26,6 +26,7 @@ def verify():
     if sha(DATA / "annotations.feather") != lock["annotations.feather"]["sha256"]:
         raise RuntimeError("Annotation checksum mismatch")
     expected = json.loads((PACKAGE / "arrays.lock.json").read_text())
+    scramble = scramble_lock(expected)
     with np.load(GRAPH, allow_pickle=False) as a:
         if set(a.files) != set(expected):
             raise RuntimeError("Graph fields mismatch")
@@ -51,12 +52,37 @@ def verify():
     with np.load(GRAPH, allow_pickle=False) as a:
         if not np.array_equal(n.source_id.to_numpy(), a["ids"]):
             raise RuntimeError("Normalized neuron order mismatch")
-    return {
+    result = {
         "release": "MaleCNS v1.0",
         "neurons": 166700,
         "directed_edges": 25582938,
         "arrays_verified": True,
     }
+    if scramble:
+        # Recorded in run provenance so a scrambled run can never pass as real.
+        result["wiring"] = "SCRAMBLED degree-preserving control"
+        result["scramble"] = scramble["summary"]
+    return result
+
+
+def scramble_lock(expected):
+    """Accept a scrambled control graph only if it derives from the locked real one.
+
+    `python -m stonkfly.neural.scramble` writes scramble.lock.json next to the
+    scrambled graph. Its original hashes must equal the official locks; only
+    then are the scrambled hashes substituted. Without the file nothing changes.
+    """
+    path = DATA / "scramble.lock.json"
+    if not path.exists():
+        return None
+    lock = json.loads(path.read_text())
+    for k, h in lock["original_arrays"].items():
+        if expected.get(k) != h:
+            raise RuntimeError("Scrambled graph was not derived from the locked graph: " + k)
+    if set(lock["scrambled_arrays"]) - set(expected):
+        raise RuntimeError("Unknown scrambled array")
+    expected.update(lock["scrambled_arrays"])
+    return lock
 
 
 def prepare(reuse=None):

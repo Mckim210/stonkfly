@@ -137,6 +137,8 @@ def main():
         from .data import verify
 
         verified = verify()
+        if a.live and "scramble" in verified:
+            raise SystemExit("A scrambled-wiring control graph is paper-only.")
         from PIL import Image
 
         from .actions import StonkflyActions
