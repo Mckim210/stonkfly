@@ -1,0 +1,134 @@
+{
+  "runs": [
+    {
+      "run": "runs/2026-10-08/fly",
+      "policy": "fly connectome",
+      "wiring": "real MaleCNS",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 35,
+      "sell_proposals": 6,
+      "fills": 21,
+      "vetoes": 20,
+      "halted": null,
+      "mean_total_spikes": 603846.7555555556,
+      "final_equity": 98.62089895922034,
+      "pnl": -1.3791010407796538,
+      "vs_random": {
+        "percentile": 90.60000000000001,
+        "p_value": 0.09490509490509491,
+        "random_at_least_as_good": 94
+      }
+    },
+    {
+      "run": "runs/2026-10-08/scrambled-seed1",
+      "policy": "fly connectome",
+      "wiring": "SCRAMBLED degree-preserving control",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 0,
+      "sell_proposals": 0,
+      "fills": 0,
+      "vetoes": 0,
+      "halted": null,
+      "mean_total_spikes": 551824.5277777778,
+      "final_equity": 100.0,
+      "pnl": 0.0,
+      "vs_random": {
+        "percentile": 100.0,
+        "p_value": 0.000999000999000999,
+        "random_at_least_as_good": 0
+      }
+    },
+    {
+      "run": "runs/2026-10-08/scrambled-seed2",
+      "policy": "fly connectome",
+      "wiring": "SCRAMBLED degree-preserving control",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 0,
+      "sell_proposals": 0,
+      "fills": 0,
+      "vetoes": 0,
+      "halted": null,
+      "mean_total_spikes": 571045.0666666667,
+      "final_equity": 100.0,
+      "pnl": 0.0,
+      "vs_random": {
+        "percentile": 100.0,
+        "p_value": 0.000999000999000999,
+        "random_at_least_as_good": 0
+      }
+    },
+    {
+      "run": "runs/2026-10-08/scrambled-seed3",
+      "policy": "fly connectome",
+      "wiring": "SCRAMBLED degree-preserving control",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 0,
+      "sell_proposals": 0,
+      "fills": 0,
+      "vetoes": 0,
+      "halted": null,
+      "mean_total_spikes": 596140.0722222222,
+      "final_equity": 100.0,
+      "pnl": 0.0,
+      "vs_random": {
+        "percentile": 100.0,
+        "p_value": 0.000999000999000999,
+        "random_at_least_as_good": 0
+      }
+    },
+    {
+      "run": "runs/2026-10-08/scrambled-seed4",
+      "policy": "fly connectome",
+      "wiring": "SCRAMBLED degree-preserving control",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 0,
+      "sell_proposals": 0,
+      "fills": 0,
+      "vetoes": 0,
+      "halted": null,
+      "mean_total_spikes": 540010.4,
+      "final_equity": 100.0,
+      "pnl": 0.0,
+      "vs_random": {
+        "percentile": 100.0,
+        "p_value": 0.000999000999000999,
+        "random_at_least_as_good": 0
+      }
+    },
+    {
+      "run": "runs/2026-10-08/scrambled-seed5",
+      "policy": "fly connectome",
+      "wiring": "SCRAMBLED degree-preserving control",
+      "tape_sha256": "88243e2a9ca278c33112f34761db9de2b77d607f35ad7ef459141f3b8d2fd0cd",
+      "observations": 180,
+      "buy_proposals": 0,
+      "sell_proposals": 0,
+      "fills": 0,
+      "vetoes": 0,
+      "halted": null,
+      "mean_total_spikes": 536425.911111111,
+      "final_equity": 100.0,
+      "pnl": 0.0,
+      "vs_random": {
+        "percentile": 100.0,
+        "p_value": 0.000999000999000999,
+        "random_at_least_as_good": 0
+      }
+    }
+  ],
+  "random": {
+    "count": 1000,
+    "mean_pnl": -1.4748709947719896,
+    "sd_pnl": 0.06850804566936414,
+    "p5_pnl": -1.5675215343156639,
+    "median_pnl": -1.4850588356314556,
+    "p95_pnl": -1.351499391990957,
+    "halted": 0
+  },
+  "same_tape": true
+}
