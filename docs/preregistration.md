@@ -47,6 +47,11 @@ Before the main experiment:
 1. Determinism: rerun the real fly on the pilot tape for 5 steps in a new folder; `spike_sha256` must match the pilot for every step. If it does not, one real-fly run per day is not a sufficient sample, and this plan is revised before any test-day run.
 2. Scramble seed 1 on the real MaleCNS graph, recording time and peak memory.
 
+Results (2026-10-15, still before any test-day tape):
+
+1. Deterministic. A fresh 5-step real-fly run on the pilot tape matched the pilot's `spike_sha256`, proposal and equity at every step. One real-fly run per day stands.
+2. Scramble seed 1: 53 s, 1.9 GB peak memory, 1,571 edges needing a second repair round, zero duplicate pairs, accepted by `verify`. A 3-step smoke run on the pilot tape: about 540,000–551,000 spikes per observation (real fly: 373,000–388,000), 1,500–1,900 KC spikes (real fly: 10–16), zero DNpe017 gate spikes, so every proposal was HOLD. If that persists, a scrambled fly's P&L reflects never trading, not worse timing; spike counts are reported to show this.
+
 ## Known limitations, stated in advance
 
 - The fly proposed a trade on 5 of 5 pilot observations. If that continues, the 24-orders-per-day limit is reached within the first hour or so of each 3-hour tape and later proposals are vetoed. This applies to every policy, but the result then mostly reflects early timing plus holding.
