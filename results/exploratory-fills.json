@@ -1,0 +1,261 @@
+{
+  "label": "EXPLORATORY analysis not in the preregistration",
+  "question": "Is the fly-vs-random P&L difference explained by the number of fills (fees)?",
+  "source": "stonkfly.control.outcome() on existing runs/2026-10-DD/{fly,random/seed-*}; no simulation rerun",
+  "matching_rule": "random traders with the fly's exact fill count; widened to +/-1 then +/-2 if fewer than 20",
+  "p_value": "(1 + #matched random with P&L >= fly) / (1 + n matched), one-sided",
+  "days": [
+    {
+      "day": "2026-10-02",
+      "fly_fills": 23,
+      "fly_pnl": -0.8954785980354533,
+      "random_fills": {
+        "min": 17,
+        "median": 23.0,
+        "max": 23,
+        "share_below_fly": 0.245,
+        "share_equal_fly": 0.755,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.8273932606127326,
+      "matched": {
+        "window": 0,
+        "n": 755,
+        "below_minimum": false,
+        "mean_pnl": -0.9160252324515807,
+        "fly_minus_matched_mean": 0.020546634416127474,
+        "p_one_sided": 0.27380952380952384
+      },
+      "all_random_mean_pnl": -0.8902835197714356,
+      "fly_minus_all_random_mean": -0.005195078264017661
+    },
+    {
+      "day": "2026-10-03",
+      "fly_fills": 23,
+      "fly_pnl": -1.3381278704101638,
+      "random_fills": {
+        "min": 21,
+        "median": 24.0,
+        "max": 24,
+        "share_below_fly": 0.008,
+        "share_equal_fly": 0.061,
+        "share_above_fly": 0.931
+      },
+      "random_corr_fills_pnl": -0.7627333318654574,
+      "matched": {
+        "window": 0,
+        "n": 61,
+        "below_minimum": false,
+        "mean_pnl": -1.2276854019168082,
+        "fly_minus_matched_mean": -0.1104424684933556,
+        "p_one_sided": 1.0
+      },
+      "all_random_mean_pnl": -1.2775513011324133,
+      "fly_minus_all_random_mean": -0.06057656927775046
+    },
+    {
+      "day": "2026-10-04",
+      "fly_fills": 24,
+      "fly_pnl": -1.4174073905606968,
+      "random_fills": {
+        "min": 19,
+        "median": 24.0,
+        "max": 24,
+        "share_below_fly": 0.072,
+        "share_equal_fly": 0.928,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.9043848665953215,
+      "matched": {
+        "window": 0,
+        "n": 928,
+        "below_minimum": false,
+        "mean_pnl": -1.4159845598747738,
+        "fly_minus_matched_mean": -0.0014228306859229711,
+        "p_one_sided": 0.5823466092572659
+      },
+      "all_random_mean_pnl": -1.411192021780193,
+      "fly_minus_all_random_mean": -0.006215368780503772
+    },
+    {
+      "day": "2026-10-05",
+      "fly_fills": 15,
+      "fly_pnl": -0.7464202506686191,
+      "random_fills": {
+        "min": 13,
+        "median": 15.0,
+        "max": 15,
+        "share_below_fly": 0.033,
+        "share_equal_fly": 0.967,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.702763746417298,
+      "matched": {
+        "window": 0,
+        "n": 967,
+        "below_minimum": false,
+        "mean_pnl": -0.740307150853925,
+        "fly_minus_matched_mean": -0.006113099814694101,
+        "p_one_sided": 0.6528925619834711
+      },
+      "all_random_mean_pnl": -0.7376743335511949,
+      "fly_minus_all_random_mean": -0.008745917117424118
+    },
+    {
+      "day": "2026-10-06",
+      "fly_fills": 23,
+      "fly_pnl": -1.7266732431437801,
+      "random_fills": {
+        "min": 17,
+        "median": 23.0,
+        "max": 23,
+        "share_below_fly": 0.144,
+        "share_equal_fly": 0.856,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.8421594209634037,
+      "matched": {
+        "window": 0,
+        "n": 856,
+        "below_minimum": false,
+        "mean_pnl": -1.711585156124419,
+        "fly_minus_matched_mean": -0.01508808701936104,
+        "p_one_sided": 0.7432905484247374
+      },
+      "all_random_mean_pnl": -1.6982983250058803,
+      "fly_minus_all_random_mean": -0.02837491813789983
+    },
+    {
+      "day": "2026-10-07",
+      "fly_fills": 24,
+      "fly_pnl": -3.247539741078797,
+      "random_fills": {
+        "min": 23,
+        "median": 24.0,
+        "max": 24,
+        "share_below_fly": 0.001,
+        "share_equal_fly": 0.999,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.0018193184441285253,
+      "matched": {
+        "window": 0,
+        "n": 999,
+        "below_minimum": false,
+        "mean_pnl": -3.1225470916835336,
+        "fly_minus_matched_mean": -0.12499264939526356,
+        "p_one_sided": 0.78
+      },
+      "all_random_mean_pnl": -3.1225374606749803,
+      "fly_minus_all_random_mean": -0.1250022804038169
+    },
+    {
+      "day": "2026-10-08",
+      "fly_fills": 21,
+      "fly_pnl": -1.3791010407796538,
+      "random_fills": {
+        "min": 17,
+        "median": 23.0,
+        "max": 23,
+        "share_below_fly": 0.034,
+        "share_equal_fly": 0.142,
+        "share_above_fly": 0.824
+      },
+      "random_corr_fills_pnl": -0.7998137157667708,
+      "matched": {
+        "window": 0,
+        "n": 142,
+        "below_minimum": false,
+        "mean_pnl": -1.3942978373399686,
+        "fly_minus_matched_mean": 0.015196796560314807,
+        "p_one_sided": 0.42657342657342656
+      },
+      "all_random_mean_pnl": -1.4748709947719894,
+      "fly_minus_all_random_mean": 0.09576995399233557
+    },
+    {
+      "day": "2026-10-09",
+      "fly_fills": 23,
+      "fly_pnl": -0.9202433810646746,
+      "random_fills": {
+        "min": 19,
+        "median": 23.0,
+        "max": 23,
+        "share_below_fly": 0.119,
+        "share_equal_fly": 0.881,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.8639307607964534,
+      "matched": {
+        "window": 0,
+        "n": 881,
+        "below_minimum": false,
+        "mean_pnl": -0.9399879983689611,
+        "fly_minus_matched_mean": 0.01974461730428645,
+        "p_one_sided": 0.17233560090702948
+      },
+      "all_random_mean_pnl": -0.9274393817288964,
+      "fly_minus_all_random_mean": 0.007196000664221769
+    },
+    {
+      "day": "2026-10-10",
+      "fly_fills": 21,
+      "fly_pnl": -1.1907722846551587,
+      "random_fills": {
+        "min": 17,
+        "median": 21.0,
+        "max": 21,
+        "share_below_fly": 0.156,
+        "share_equal_fly": 0.844,
+        "share_above_fly": 0.0
+      },
+      "random_corr_fills_pnl": -0.9655770744238237,
+      "matched": {
+        "window": 0,
+        "n": 844,
+        "below_minimum": false,
+        "mean_pnl": -1.1866033465309116,
+        "fly_minus_matched_mean": -0.0041689381242471235,
+        "p_one_sided": 0.6497041420118344
+      },
+      "all_random_mean_pnl": -1.1706068966880157,
+      "fly_minus_all_random_mean": -0.020165387967143067
+    },
+    {
+      "day": "2026-10-11",
+      "fly_fills": 19,
+      "fly_pnl": -0.9667631247722308,
+      "random_fills": {
+        "min": 17,
+        "median": 21.0,
+        "max": 21,
+        "share_below_fly": 0.003,
+        "share_equal_fly": 0.045,
+        "share_above_fly": 0.952
+      },
+      "random_corr_fills_pnl": -0.959524993335994,
+      "matched": {
+        "window": 0,
+        "n": 45,
+        "below_minimum": false,
+        "mean_pnl": -0.9903943383522053,
+        "fly_minus_matched_mean": 0.02363121357997444,
+        "p_one_sided": 0.043478260869565216
+      },
+      "all_random_mean_pnl": -1.1045623826540933,
+      "fly_minus_all_random_mean": 0.13779925788186254
+    }
+  ],
+  "pooled": {
+    "days": 10,
+    "mean_fly_minus_matched": -0.018310881167214122,
+    "sd": 0.05411267400252127,
+    "se": 0.017111930013014722,
+    "t_critical_df9": 2.2621571627,
+    "ci95": [
+      -0.057020756213776475,
+      0.020398993879348234
+    ],
+    "t_statistic": -1.0700652207721466
+  }
+}
