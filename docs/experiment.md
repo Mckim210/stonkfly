@@ -7,6 +7,8 @@ A fly run that ends in profit does not show skill. Rising prices can make any bu
 | Real fly | MaleCNS connectome | The result being tested |
 | Scrambled fly (several seeds) | Same neurons and degrees, randomized wiring ([scramble](validation.md#wiring-control-scrambled-connectome)) | Does the *specific* fly wiring matter? |
 | Random traders (hundreds of seeds) | The real fly's own BUY/SELL/HOLD proposals, shuffled in time | Could the same trading activity at random times do as well? |
+| Frozen fly (`--frozen`) | Real fly, memory synapses never change | Does learning matter at all? |
+| Shuffled-reinforcement fly | Real fly, learning on, gets another run's reward/aversive signals in shuffled order | Does it matter that reinforcement follows the fly's own P&L? |
 
 ## 1. Record a tape
 
@@ -36,6 +38,17 @@ python -m stonkfly.control batch --match runs/fly --seeds 1-200 --jobs 4 --out r
 ```
 
 Each seed shuffles the fly's exact proposal sequence, so every random trader makes exactly as many BUY and SELL proposals as the fly did. The run is labelled `RANDOM control, no neural network` and needs no connectome data. A random trader on one day of one-minute data takes about 15 seconds. `--buy-rate/--sell-rate` with `run --policy random` gives unmatched independent draws instead.
+
+## 3b. Learning controls
+
+```sh
+python -m stonkfly run --replay tapes/oct01.jsonl --frozen --out runs/frozen
+python -m stonkfly run --replay tapes/oct01.jsonl --out runs/shuffled \
+  --shuffle-reinforcement runs/fly --shuffle-seed 1
+python -m stonkfly.learning day runs/oct01 --json results.json   # expects learn/ frozen/ shuffled/ random/
+```
+
+Every fly run records, per observation, the signal its own P&L earned (`reinforcement_earned`) and the signal its dopamine cells actually received (`reinforcement_delivered`). The shuffled control reads the source run's delivered signals, permutes them with the seed and delivers them in that order, ignoring its own P&L; it checks that the counts match the source. At the end of a run, `final.json` records the memory state (`changed_edges`, `mean_efficacy`, `sha256`) and the delivered signal counts. A `--frozen` run whose plastic synapses changed stops with an error.
 
 ## 4. Compare
 

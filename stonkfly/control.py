@@ -12,11 +12,13 @@ paper fills, fees and accounting are the same code a fly run uses.
 """
 
 import argparse
+import hashlib
 import json
 import sqlite3
 import statistics
 import subprocess
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -25,6 +27,7 @@ import numpy as np
 from .config import D
 
 SIDES = ("BUY", "SELL", "HOLD")
+SIGNALS = ("none", "reward", "aversive")
 
 
 def events(run):
@@ -54,6 +57,60 @@ def matched_proposals(run, tape_sha256=None):
     if not sides or set(sides) - set(SIDES):
         raise SystemExit(f"{run} has no usable proposals.")
     return sides
+
+
+def delivered_signals(run, tape_sha256=None):
+    """The reinforcement a finished fly run actually delivered, one per observation."""
+    prov = provenance(run)
+    if not str(prov.get("policy", "")).startswith("fly"):
+        raise SystemExit(f"{run} is not a fly run; it delivered no reinforcement.")
+    if tape_sha256 is not None and tape_sha(prov) != tape_sha256:
+        raise SystemExit(f"{run} used a different tape; compare runs on the same tape.")
+    signals = [row.get("reinforcement_delivered") for row in events(run)]
+    if not signals or set(signals) - set(SIGNALS):
+        raise SystemExit(f"{run} has no recorded per-observation reinforcement.")
+    return signals
+
+
+class ShuffledReinforcement:
+    """Reinforcement control: a source run's delivered signals in shuffled order.
+
+    The brain still learns, and gets exactly as many reward and aversive pulses
+    as the source run, but at times unrelated to its own portfolio P&L.
+    Observation i (0-based ledger tick) receives sequence[i].
+    """
+
+    def __init__(self, source, signals, seed):
+        self.source = str(source)
+        self.seed = int(seed)
+        self.original = [str(x) for x in signals]
+        rng = np.random.default_rng(self.seed)
+        self.sequence = [str(x) for x in rng.permutation(np.asarray(self.original))]
+        if Counter(self.sequence) != Counter(self.original):
+            raise RuntimeError("Shuffled signal counts differ from the source run")
+
+    def counts(self):
+        return {s: self.sequence.count(s) for s in SIGNALS}
+
+    def describe(self):
+        return {
+            "control": "SHUFFLED reinforcement: source run's delivered signals in shuffled order; own P&L ignored",
+            "source": self.source,
+            "seed": self.seed,
+            "counts": self.counts(),
+            "source_sha256": hashlib.sha256(json.dumps(self.original).encode()).hexdigest(),
+        }
+
+    def done(self, tick):
+        return tick >= len(self.sequence)
+
+    def signal(self, tick):
+        return self.sequence[tick]
+
+    def check(self, rows):
+        """Every recorded observation received its scheduled shuffled signal."""
+        if any(r["reinforcement_delivered"] != self.sequence[r["tick"] - 1] for r in rows):
+            raise RuntimeError("Delivered reinforcement differs from the shuffled sequence")
 
 
 class RandomController:
@@ -141,21 +198,28 @@ def outcome(run):
         raise RuntimeError(f"{run}: holding a product never observed")
     equity = D(meta["cash"]) + sum((v * bids[p] for p, v in positions.items() if v), D(0))
     prov = provenance(run)
+    fly = str(prov.get("policy", "")).startswith("fly")
     proposals = [r["neural"]["side"] for r in rows]
     spikes = [r["neural"]["total_spikes"] for r in rows if "total_spikes" in r["neural"]]
+    final = run / "final.json"
     return {
         "run": str(run),
         "policy": prov.get("policy", "unknown"),
-        "wiring": (prov.get("dataset") or {}).get("wiring", "real MaleCNS")
-        if str(prov.get("policy", "")).startswith("fly") else "-",
+        "wiring": (prov.get("dataset") or {}).get("wiring", "real MaleCNS") if fly else "-",
         "tape_sha256": tape_sha(prov),
+        "learning": (prov.get("settings") or {}).get("learning") if fly else None,
+        "reinforcement": prov.get("reinforcement"),
         "observations": len(rows),
         "buy_proposals": proposals.count("BUY"),
         "sell_proposals": proposals.count("SELL"),
+        "hold_proposals": proposals.count("HOLD"),
         "fills": sum(r["execution"].get("status") == "FILLED" for r in rows),
         "vetoes": sum(r["execution"].get("status") == "VETO" for r in rows),
         "halted": meta.get("halted"),
         "mean_total_spikes": statistics.fmean(spikes) if spikes else None,
+        "signals_delivered": {s: sum(r.get("reinforcement_delivered") == s for r in rows)
+                              for s in SIGNALS} if fly else None,
+        "memory": json.loads(final.read_text())["memory"] if fly and final.exists() else None,
         "final_equity": float(equity),
         "pnl": float(equity - D(meta["initial_cash"])),
     }

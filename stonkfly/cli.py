@@ -75,6 +75,13 @@ def main():
     run.add_argument("--buy-rate", type=float, help="random: P(BUY) per observation")
     run.add_argument("--sell-rate", type=float, help="random: P(SELL) per observation")
     run.add_argument("--seed", type=int, default=0, help="random: seed")
+    run.add_argument(
+        "--shuffle-reinforcement",
+        type=Path,
+        metavar="RUN",
+        help="Control: deliver this fly run's recorded reinforcement in shuffled order, ignoring own P&L (needs --replay)",
+    )
+    run.add_argument("--shuffle-seed", type=int, help="Seed for --shuffle-reinforcement")
     tape = sub.add_parser("tape", help="Record a market tape for replay")
     tape.add_argument("--out", type=Path, required=True)
     tape.add_argument(
@@ -149,8 +156,14 @@ def main():
             )
         )
         return
-    if a.live and (a.fixture or a.fast or a.replay or a.policy != "fly"):
+    if a.live and (
+        a.fixture or a.fast or a.replay or a.policy != "fly" or a.shuffle_reinforcement
+    ):
         p.error("Live mode forbids fixtures, fast replay, tapes and control policies")
+    if (a.shuffle_reinforcement is None) != (a.shuffle_seed is None):
+        p.error("Use --shuffle-reinforcement RUN together with --shuffle-seed N")
+    if a.shuffle_reinforcement and (a.policy != "fly" or not a.replay):
+        p.error("Shuffled reinforcement is a fly control; it needs --replay of the same tape")
     if a.fixture and a.replay:
         p.error("Choose --fixture or --replay")
     if a.policy == "random":
@@ -245,6 +258,15 @@ def main():
             from .neural.controller import FlyController
 
             controller = FlyController(settings)
+        shuffle = None
+        if a.shuffle_reinforcement:
+            from .control import ShuffledReinforcement, delivered_signals
+
+            shuffle = ShuffledReinforcement(
+                a.shuffle_reinforcement,
+                delivered_signals(a.shuffle_reinforcement, market.identity["sha256"]),
+                a.shuffle_seed,
+            )
         cp = ledger.get("checkpoint")
         if cp:
             path = out / cp["file"]
@@ -262,6 +284,11 @@ def main():
             "feed": "replay" if a.replay else "fixture" if a.fixture else "coinbase-public",
             "tape": market.identity if a.replay else None,
             "decoder": "DNp20 mean R-L: buy/sell; DNpe017 spike gate; otherwise hold. Engineered fixed mapping."
+            if fly
+            else None,
+            "reinforcement": shuffle.describe()
+            if shuffle
+            else "own marked-to-bid portfolio P&L"
             if fly
             else None,
             "learning_validated": False,
@@ -297,6 +324,9 @@ def main():
             if getattr(controller, "done", lambda: False)():
                 print("Matched proposal sequence finished.", flush=True)
                 break
+            if shuffle and shuffle.done(ledger.get("tick")):
+                print("Shuffled reinforcement sequence finished.", flush=True)
+                break
             broker.reconcile()
             broker.verify_balances()
             try:
@@ -312,8 +342,14 @@ def main():
             kind, delta = reinforcement(
                 equity, ledger.get("anchor"), settings.reward_deadband
             )
+            # A shuffled-reinforcement control ignores its own P&L signal.
+            delivered = shuffle.signal(ledger.get("tick")) if shuffle else kind
             frame = market_frame(product, market.history[product], q.bid, q.ask)
-            neural = controller.observe(frame, kind)
+            neural = controller.observe(frame, delivered)
+            signals = {
+                "reinforcement_earned": kind,
+                "reinforcement_delivered": delivered if fly else None,
+            }
             # Checkpoint + accounting anchor are committed before any trade.
             # Two slots keep the last committed snapshot safe during a crash.
             slot = ledger.get("tick") % 2
@@ -328,6 +364,7 @@ def main():
                 "product": product,
                 "quote": q.json(),
                 "pnl_delta_usdc": str(delta),
+                **signals,
                 "market_history": market.history,
                 "fixture_tick": getattr(market, "tick", None),
             }
@@ -355,6 +392,7 @@ def main():
                 "quote": q.json(),
                 "equity_usdc": str(equity),
                 "pnl_delta_usdc": str(delta),
+                **signals,
                 "neural": neural,
                 "execution": order,
             }
@@ -371,7 +409,7 @@ def main():
                         "side": neural["side"],
                         "execution": order["status"],
                         "equity": str(equity),
-                        "stimulus": kind,
+                        "stimulus": delivered,
                         "plastic_edges_changed": neural.get("memory", {}).get(
                             "changed_edges"
                         ),
@@ -384,6 +422,24 @@ def main():
                 until = started + settings.interval_seconds
                 while time.monotonic() < until and not (out / "STOP").exists():
                     time.sleep(min(1, until - time.monotonic()))
+        if fly:
+            from .control import SIGNALS, events
+
+            rows = events(out)
+            memory = controller.brain.memory()
+            if not settings.learning and memory["changed_edges"]:
+                raise RuntimeError("Frozen run changed plastic synapses")
+            if shuffle:
+                shuffle.check(rows)
+            sent = [r["reinforcement_delivered"] for r in rows]
+            final = {
+                "tick": ledger.get("tick"),
+                "learning": settings.learning,
+                "memory": memory,
+                "signals_delivered": {s: sent.count(s) for s in SIGNALS},
+            }
+            (out / "final.json").write_text(json.dumps(final, indent=2) + "\n")
+            print(json.dumps({"final": final}), flush=True)
     except KeyboardInterrupt:
         print("Stopped; run state preserved.", flush=True)
     except Exception as e:
