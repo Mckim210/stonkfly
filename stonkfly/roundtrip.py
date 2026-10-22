@@ -255,6 +255,69 @@ def criteria(rows, frozen, run_summary):
     }
 
 
+def exploratory(rows, others):
+    """Reference values added after seeing the pilot results; never part of the verdict.
+
+    Is the replay KC overlap specific to the buy observation, and do memory and
+    proposals change more around trade-level pulses than without them?
+    """
+    from .learning import divergence
+
+    kc = {r["tick"]: set(r["roundtrip"]["kc_active"]) for r in rows}
+    ticks = sorted(kc)
+    pairs = [jaccard(kc[a], kc[b]) for i, a in enumerate(ticks) for b in ticks[i + 1:]]
+    replays = []
+    for r in rows:
+        x = r["roundtrip"]["replay"]
+        if not x:
+            continue
+        shown = set(x["kc_active"])
+        own = jaccard(shown, kc[x["buy_observation"]])
+        rest = [jaccard(shown, kc[t]) for t in ticks if t != x["buy_observation"]]
+        rest = [v for v in rest if v is not None]
+        replays.append({
+            "observation": r["tick"],
+            "buy_observation": x["buy_observation"],
+            "jaccard_buy": own,
+            "jaccard_sell_observation": jaccard(shown, kc[r["tick"] - 1]),
+            "jaccard_other_mean": statistics.fmean(rest),
+            # 1 = the buy observation is the most similar of all regular observations.
+            "buy_rank": None if own is None else 1 + sum(v > own for v in rest),
+            "of": 1 + len(rest),
+        })
+    pulse = [r for r in rows if r["reinforcement_delivered"] != "none"]
+    quiet = [r for r in rows if r["reinforcement_delivered"] == "none"]
+
+    def efficacy(r):
+        return r["neural"]["memory"]["mean_efficacy"] - r["roundtrip"]["memory_before"]["mean_efficacy"]
+
+    def grew(r):
+        return r["neural"]["memory"]["changed_edges"] > r["roundtrip"]["memory_before"]["changed_edges"]
+
+    return {
+        "note": "Added after seeing the results. Not used for the verdict.",
+        "kc_set_size_first_observations": [len(kc[t]) for t in ticks[:6]],
+        "kc_jaccard_all_observation_pairs_mean": statistics.fmean(v for v in pairs if v is not None),
+        "replay_kc_specificity": replays,
+        "pulse_observations": [{
+            "observation": r["tick"],
+            "changed_edges_increase": r["neural"]["memory"]["changed_edges"]
+            - r["roundtrip"]["memory_before"]["changed_edges"],
+            "mean_efficacy_change": efficacy(r),
+            "edges_changed_in_replay_step": (r["roundtrip"]["replay"] or {}).get("edges_changed_in_step"),
+            "edges_changed_in_regular_step": r["roundtrip"]["edges_changed_in_step"],
+        } for r in pulse],
+        "no_pulse_observations": {
+            "count": len(quiet),
+            "with_changed_edges_increase": sum(grew(r) for r in quiet),
+            "mean_abs_mean_efficacy_change": statistics.fmean(abs(efficacy(r)) for r in quiet),
+            "mean_edges_changed_in_step": statistics.fmean(
+                r["roundtrip"]["edges_changed_in_step"] for r in quiet),
+        },
+        "divergence": {name: divergence(a, b) for name, (a, b) in others.items()},
+    }
+
+
 REASONS = {
     "1_trade_signals": "① 3시간 동안 거래 단위 보상+혐오 신호가 5번 미만",
     "2_memory_changes_after_pulse": "② 거래 단위 펄스 뒤 changed_edges가 늘어난 적이 없음",
@@ -322,7 +385,13 @@ def pilot(root, as_json=None, md=None):
         "failure_reasons": [REASONS[k] for k in failed],
         "reference_roundtrip_arm_criteria": reference,
         "checks": checks,
+        "exploratory": exploratory(rr, {
+            f"{a} vs frozen": (rows["frozen"], rows[a])
+            for a in ("portfolio", "roundtrip", "roundtrip-replay")
+        } | {"roundtrip vs roundtrip-replay": (rows["roundtrip"], rr)}),
     }
+    report["exploratory"]["kc_spikes_first_observations"] = {
+        arm: [x["neural"]["KC_spikes"] for x in rows[arm][:14]] for arm in ARMS}
     if as_json:
         Path(as_json).parent.mkdir(parents=True, exist_ok=True)
         Path(as_json).write_text(json.dumps(report, indent=2) + "\n")
@@ -411,16 +480,62 @@ def markdown(r):
             f"| {p['mean_efficacy_before']:.6f} → {p['mean_efficacy_after']:.6f} "
             f"| {j.get('replay_kcs', '-')} / {j.get('buy_kcs', '-')} "
             f"| {'-' if jv is None else f'{jv:.3f}'} |")
-    ref = r["reference_roundtrip_arm_criteria"]["4_differs_from_frozen_after_first_pulse"]
-    out += ["", "## ④ 보충", "",
+    ref = r["reference_roundtrip_arm_criteria"]
+    r1, r2 = ref["1_trade_signals"], ref["2_memory_changes_after_pulse"]
+    r4 = ref["4_differs_from_frozen_after_first_pulse"]
+    out += ["", "## ④ 보충과 roundtrip 실행 (참고)", "",
             f"roundtrip-replay와 frozen의 제안이 처음 달라진 관측: {c4['first_different_overall'] or '없음'}. "
-            f"첫 거래 단위 펄스 전에 이미 다른 관측: {c4['different_before']}개, 뒤: {c4['different_after']}개. "
-            f"참고로 roundtrip 실행은 첫 거래 단위 펄스(관측 {ref['first_pulse_observation'] or '-'}) 뒤 "
-            f"frozen과 {ref['different_after']}관측에서 달랐다.",
-            "", "## 점검", "",
-            "| 점검 | 결과 |", "|---|---|"]
+            f"첫 거래 단위 펄스 전에 이미 다른 관측: {c4['different_before']}개, 뒤: {c4['different_after']}개.",
+            "",
+            f"roundtrip 실행(replay 없음)에 같은 계산을 하면: ① {r1['value']}, "
+            f"② 펄스 {r2['pulses']}번 중 {r2['pulses_with_increase']}번 증가, "
+            f"④ 첫 거래 단위 펄스(관측 {r4['first_pulse_observation'] or '-'}) 뒤 frozen과 "
+            f"{r4['different_after']}관측에서 다름(펄스 전 {r4['different_before']}관측).",
+            ""]
+    out += exploratory_markdown(r["exploratory"])
+    out += ["", "## 점검", "", "| 점검 | 결과 |", "|---|---|"]
     out += [f"| {k} | {ok(v)} |" for k, v in r["checks"].items()]
     return "\n".join(out) + "\n"
+
+
+def exploratory_markdown(e):
+    q = e["no_pulse_observations"]
+    out = ["## 탐색 분석 (결과를 본 뒤 추가, 판정에 쓰지 않음)", "",
+           "판정 기준이 통과했을 때 그것이 무엇을 뜻하는지 보려고 결과를 본 뒤 추가한 참고값이다. "
+           "판정과 기준은 바꾸지 않았다.", "",
+           f"③ 관련: roundtrip-replay의 첫 6관측 KC 집합 크기 {e['kc_set_size_first_observations']}. "
+           f"정규 관측끼리 모든 쌍의 KC Jaccard 평균은 {e['kc_jaccard_all_observation_pairs_mean']:.3f}이다.", "",
+           "| replay 관측 | 매수 관측 | J(매수 관측) | J(직전 매도 관측) | J(다른 모든 관측) 평균 "
+           "| 매수 관측의 유사도 순위 |", "|---|---|---|---|---|---|"]
+    for x in e["replay_kc_specificity"]:
+        own = "-" if x["jaccard_buy"] is None else f"{x['jaccard_buy']:.3f}"
+        sell = "-" if x["jaccard_sell_observation"] is None else f"{x['jaccard_sell_observation']:.3f}"
+        out.append(f"| {x['observation']} | {x['buy_observation']} | {own} | {sell} "
+                   f"| {x['jaccard_other_mean']:.3f} | {x['buy_rank'] or '-'} / {x['of']} |")
+    out += ["", "순위 1 = 매수 관측이 정규 관측 전체 중 replay와 가장 비슷하다는 뜻(동점은 불리하게).", "",
+            f"② 관련: 펄스 없는 관측 {q['count']}개 중 {q['with_changed_edges_increase']}개에서도 "
+            f"changed_edges가 늘었다. 펄스 없는 관측의 평균 효율 변화 절댓값 평균 "
+            f"{q['mean_abs_mean_efficacy_change']:.4f}, 단계당 가중치가 바뀐 시냅스 평균 "
+            f"{q['mean_edges_changed_in_step']:.0f}개.", "",
+            "| 펄스 관측 | changed_edges 증가 | 평균 효율 변화 | 가중치가 바뀐 시냅스: replay 단계 / 정규 단계 |",
+            "|---|---|---|---|"]
+    for p in e["pulse_observations"]:
+        out.append(f"| {p['observation']} | {p['changed_edges_increase']:+d} "
+                   f"| {p['mean_efficacy_change']:+.4f} "
+                   f"| {p['edges_changed_in_replay_step'] if p['edges_changed_in_replay_step'] is not None else '-'}"
+                   f" / {p['edges_changed_in_regular_step']} |")
+    out += ["", "KC 활동: 실행별 첫 14관측의 KC 스파이크 수", "",
+            "| 실행 | 관측 1–14 |", "|---|---|"]
+    out += [f"| {arm} | {', '.join(map(str, v))} |"
+            for arm, v in e["kc_spikes_first_observations"].items()]
+    out += ["", "④ 관련: 같은 테이프에서 처음 달라진 관측. 스파이크 해시는 펄스를 받는 도파민 세포도 "
+            "포함하므로, 전달된 신호만 달라도 다르게 나온다.", "",
+            "| 비교 | 첫 스파이크 차이 | 첫 제안 차이 | 다른 제안 수 |", "|---|---|---|---|"]
+    for name, d in e["divergence"].items():
+        out.append(f"| {name} | {d['first_spike_difference_observation'] or '-'} "
+                   f"| {d['first_proposal_difference_observation'] or '-'} "
+                   f"| {d['observations_with_different_proposal']} / {d['compared_observations']} |")
+    return out
 
 
 def main():

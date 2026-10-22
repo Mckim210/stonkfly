@@ -1,0 +1,759 @@
+{
+  "tape": {
+    "path": "tapes/pilot-roundtrip-2026-10-01.jsonl",
+    "sha256": "5282433f80ecad477195794ca7f8d8b6090c902cbca489ff86fccc0d3450cb0b",
+    "source": "public Coinbase one-minute candles; bid/ask = close -/+ half_spread",
+    "observations": 180,
+    "first_time": 1790812860.0,
+    "last_time": 1790823600.0,
+    "half_spread": "0.0001"
+  },
+  "runs": {
+    "portfolio": {
+      "run": "runs/pilot-roundtrip/portfolio",
+      "policy": "fly connectome",
+      "wiring": "real MaleCNS",
+      "tape_sha256": "5282433f80ecad477195794ca7f8d8b6090c902cbca489ff86fccc0d3450cb0b",
+      "learning": true,
+      "reinforcement": "own marked-to-bid portfolio P&L",
+      "observations": 180,
+      "buy_proposals": 57,
+      "sell_proposals": 7,
+      "hold_proposals": 116,
+      "fills": 24,
+      "vetoes": 40,
+      "halted": null,
+      "mean_total_spikes": 595767.0277777778,
+      "signals_delivered": {
+        "none": 47,
+        "reward": 50,
+        "aversive": 83
+      },
+      "memory": {
+        "plastic_edges": 7835,
+        "changed_edges": 3547,
+        "mean_efficacy": 0.9378432631492615,
+        "minimum_efficacy": 0.17720352113246918,
+        "sha256": "d96385bb7b1ca8f3c5373f855afcff5a6882cf8ed647454e1aeba449e8762575",
+        "model": "stonkfly-dual-compartment-v1"
+      },
+      "final_equity": 98.58791939512955,
+      "pnl": -1.4120806048704586,
+      "first_pulse_observation": 2,
+      "first_memory_change_observation": 1,
+      "mean_kc_spikes": 4197.177777777778,
+      "fresh_start": true,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      }
+    },
+    "frozen": {
+      "run": "runs/pilot-roundtrip/frozen",
+      "policy": "fly connectome",
+      "wiring": "real MaleCNS",
+      "tape_sha256": "5282433f80ecad477195794ca7f8d8b6090c902cbca489ff86fccc0d3450cb0b",
+      "learning": false,
+      "reinforcement": "own marked-to-bid portfolio P&L",
+      "observations": 180,
+      "buy_proposals": 96,
+      "sell_proposals": 7,
+      "hold_proposals": 77,
+      "fills": 24,
+      "vetoes": 79,
+      "halted": null,
+      "mean_total_spikes": 604230.6555555556,
+      "signals_delivered": {
+        "none": 47,
+        "reward": 52,
+        "aversive": 81
+      },
+      "memory": {
+        "plastic_edges": 7835,
+        "changed_edges": 0,
+        "mean_efficacy": 1.0,
+        "minimum_efficacy": 1.0,
+        "sha256": "9f9c000fb9819eb99c214cc1da747d44e13f009bc4c3454f6b7dfe4ee669acf7",
+        "model": "stonkfly-dual-compartment-v1"
+      },
+      "final_equity": 98.59053739721786,
+      "pnl": -1.4094626027821489,
+      "first_pulse_observation": 2,
+      "first_memory_change_observation": null,
+      "mean_kc_spikes": 4208.75,
+      "fresh_start": true,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      }
+    },
+    "roundtrip": {
+      "run": "runs/pilot-roundtrip/roundtrip",
+      "policy": "fly connectome",
+      "wiring": "real MaleCNS",
+      "tape_sha256": "5282433f80ecad477195794ca7f8d8b6090c902cbca489ff86fccc0d3450cb0b",
+      "learning": true,
+      "reinforcement": "own realized round-trip P&L: each filled sell, FIFO cost incl. buy and sell fees, signed at the next observation",
+      "observations": 180,
+      "buy_proposals": 40,
+      "sell_proposals": 8,
+      "hold_proposals": 132,
+      "fills": 24,
+      "vetoes": 24,
+      "halted": null,
+      "mean_total_spikes": 593079.5833333334,
+      "signals_delivered": {
+        "none": 173,
+        "reward": 0,
+        "aversive": 7
+      },
+      "memory": {
+        "plastic_edges": 7835,
+        "changed_edges": 3502,
+        "mean_efficacy": 0.9916847348213196,
+        "minimum_efficacy": 0.25485214591026306,
+        "sha256": "c15c9ffa380aa77ab56ddf9626dd3ea46d6c8f60ec099cdbdd9ce6d63f228468",
+        "model": "stonkfly-dual-compartment-v1"
+      },
+      "final_equity": 98.60800322602378,
+      "pnl": -1.3919967739762196,
+      "first_pulse_observation": 3,
+      "first_memory_change_observation": 1,
+      "mean_kc_spikes": 4177.777777777777,
+      "fresh_start": true,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      }
+    },
+    "roundtrip-replay": {
+      "run": "runs/pilot-roundtrip/roundtrip-replay",
+      "policy": "fly connectome",
+      "wiring": "real MaleCNS",
+      "tape_sha256": "5282433f80ecad477195794ca7f8d8b6090c902cbca489ff86fccc0d3450cb0b",
+      "learning": true,
+      "reinforcement": "own realized round-trip P&L: each filled sell, FIFO cost incl. buy and sell fees, signed at the next observation, plus one undecoded replay step of the first FIFO buy's chart with the same pulse",
+      "observations": 180,
+      "buy_proposals": 54,
+      "sell_proposals": 8,
+      "hold_proposals": 118,
+      "fills": 24,
+      "vetoes": 38,
+      "halted": null,
+      "mean_total_spikes": 607483.6833333333,
+      "signals_delivered": {
+        "none": 173,
+        "reward": 0,
+        "aversive": 7
+      },
+      "memory": {
+        "plastic_edges": 7835,
+        "changed_edges": 3486,
+        "mean_efficacy": 0.942721426486969,
+        "minimum_efficacy": 0.14786450564861298,
+        "sha256": "c0def9ebdefbe2e1274c92a6efba54868699434e65ec33210c7b8c2c556fc951",
+        "model": "stonkfly-dual-compartment-v1"
+      },
+      "final_equity": 98.55064409964723,
+      "pnl": -1.4493559003527772,
+      "first_pulse_observation": 3,
+      "first_memory_change_observation": 1,
+      "mean_kc_spikes": 4381.188888888889,
+      "fresh_start": true,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      }
+    }
+  },
+  "roundtrip_summaries": {
+    "roundtrip": {
+      "trade_signals": {
+        "reward": 0,
+        "aversive": 7
+      },
+      "trade_pulses_including_replay": 7,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      },
+      "undelivered_final_sale": null,
+      "pulse_memory": [
+        {
+          "observation": 3,
+          "signal": "aversive",
+          "changed_edges_before": 5,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 5,
+          "mean_efficacy_before": 0.9999837875366211,
+          "mean_efficacy_after": 0.9999565482139587
+        },
+        {
+          "observation": 9,
+          "signal": "aversive",
+          "changed_edges_before": 5,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 5,
+          "mean_efficacy_before": 1.0000478029251099,
+          "mean_efficacy_after": 1.0000410079956055
+        },
+        {
+          "observation": 65,
+          "signal": "aversive",
+          "changed_edges_before": 3424,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 3424,
+          "mean_efficacy_before": 0.9964123368263245,
+          "mean_efficacy_after": 0.9910964965820312
+        },
+        {
+          "observation": 81,
+          "signal": "aversive",
+          "changed_edges_before": 3432,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 3432,
+          "mean_efficacy_before": 0.9968549609184265,
+          "mean_efficacy_after": 0.9881490468978882
+        },
+        {
+          "observation": 85,
+          "signal": "aversive",
+          "changed_edges_before": 3445,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 3445,
+          "mean_efficacy_before": 0.9928012490272522,
+          "mean_efficacy_after": 0.9859943389892578
+        },
+        {
+          "observation": 86,
+          "signal": "aversive",
+          "changed_edges_before": 3445,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 3445,
+          "mean_efficacy_before": 0.9859943389892578,
+          "mean_efficacy_after": 0.9789190292358398
+        },
+        {
+          "observation": 108,
+          "signal": "aversive",
+          "changed_edges_before": 3450,
+          "changed_edges_after_replay": null,
+          "changed_edges_after": 3450,
+          "mean_efficacy_before": 0.9935049414634705,
+          "mean_efficacy_after": 0.9815612435340881
+        }
+      ],
+      "replay_kc_jaccard": {
+        "mean": null,
+        "count": 0,
+        "undefined": 0,
+        "steps": []
+      }
+    },
+    "roundtrip-replay": {
+      "trade_signals": {
+        "reward": 0,
+        "aversive": 7
+      },
+      "trade_pulses_including_replay": 14,
+      "sells_by_realized_sign": {
+        "positive": 0,
+        "negative": 7,
+        "zero": 0
+      },
+      "undelivered_final_sale": null,
+      "pulse_memory": [
+        {
+          "observation": 3,
+          "signal": "aversive",
+          "changed_edges_before": 5,
+          "changed_edges_after_replay": 5,
+          "changed_edges_after": 5,
+          "mean_efficacy_before": 0.9999837875366211,
+          "mean_efficacy_after": 0.9999931454658508
+        },
+        {
+          "observation": 88,
+          "signal": "aversive",
+          "changed_edges_before": 3469,
+          "changed_edges_after_replay": 3469,
+          "changed_edges_after": 3469,
+          "mean_efficacy_before": 1.0177123546600342,
+          "mean_efficacy_after": 1.0010504722595215
+        },
+        {
+          "observation": 92,
+          "signal": "aversive",
+          "changed_edges_before": 3470,
+          "changed_edges_after_replay": 3470,
+          "changed_edges_after": 3470,
+          "mean_efficacy_before": 1.01649808883667,
+          "mean_efficacy_after": 0.9990407824516296
+        },
+        {
+          "observation": 96,
+          "signal": "aversive",
+          "changed_edges_before": 3470,
+          "changed_edges_after_replay": 3470,
+          "changed_edges_after": 3470,
+          "mean_efficacy_before": 1.0125432014465332,
+          "mean_efficacy_after": 1.000604510307312
+        },
+        {
+          "observation": 109,
+          "signal": "aversive",
+          "changed_edges_before": 3473,
+          "changed_edges_after_replay": 3473,
+          "changed_edges_after": 3473,
+          "mean_efficacy_before": 0.9791039824485779,
+          "mean_efficacy_after": 0.9457022547721863
+        },
+        {
+          "observation": 124,
+          "signal": "aversive",
+          "changed_edges_before": 3476,
+          "changed_edges_after_replay": 3476,
+          "changed_edges_after": 3476,
+          "mean_efficacy_before": 0.9396743178367615,
+          "mean_efficacy_after": 0.9378847479820251
+        },
+        {
+          "observation": 142,
+          "signal": "aversive",
+          "changed_edges_before": 3481,
+          "changed_edges_after_replay": 3482,
+          "changed_edges_after": 3482,
+          "mean_efficacy_before": 0.9458101391792297,
+          "mean_efficacy_after": 0.9361203908920288
+        }
+      ],
+      "replay_kc_jaccard": {
+        "mean": 0.7192348617881503,
+        "count": 7,
+        "undefined": 0,
+        "steps": [
+          {
+            "observation": 3,
+            "buy_observation": 1,
+            "replay_kcs": 2,
+            "buy_kcs": 4,
+            "jaccard": 0.5
+          },
+          {
+            "observation": 88,
+            "buy_observation": 3,
+            "replay_kcs": 1415,
+            "buy_kcs": 3,
+            "jaccard": 0.0
+          },
+          {
+            "observation": 92,
+            "buy_observation": 19,
+            "replay_kcs": 1408,
+            "buy_kcs": 1484,
+            "jaccard": 0.9089108910891089
+          },
+          {
+            "observation": 96,
+            "buy_observation": 23,
+            "replay_kcs": 1513,
+            "buy_kcs": 1414,
+            "jaccard": 0.892049127343245
+          },
+          {
+            "observation": 109,
+            "buy_observation": 58,
+            "replay_kcs": 1443,
+            "buy_kcs": 1424,
+            "jaccard": 0.9358541525995948
+          },
+          {
+            "observation": 124,
+            "buy_observation": 73,
+            "replay_kcs": 1412,
+            "buy_kcs": 1475,
+            "jaccard": 0.8968462549277266
+          },
+          {
+            "observation": 142,
+            "buy_observation": 84,
+            "replay_kcs": 1439,
+            "buy_kcs": 1460,
+            "jaccard": 0.9009836065573771
+          }
+        ]
+      }
+    }
+  },
+  "criteria": {
+    "1_trade_signals": {
+      "value": 7,
+      "threshold": 5,
+      "pass": true
+    },
+    "2_memory_changes_after_pulse": {
+      "pulses": 7,
+      "pulses_with_increase": 1,
+      "steps": [
+        {
+          "observation": 3,
+          "before": 5,
+          "after": 5
+        },
+        {
+          "observation": 88,
+          "before": 3469,
+          "after": 3469
+        },
+        {
+          "observation": 92,
+          "before": 3470,
+          "after": 3470
+        },
+        {
+          "observation": 96,
+          "before": 3470,
+          "after": 3470
+        },
+        {
+          "observation": 109,
+          "before": 3473,
+          "after": 3473
+        },
+        {
+          "observation": 124,
+          "before": 3476,
+          "after": 3476
+        },
+        {
+          "observation": 142,
+          "before": 3481,
+          "after": 3482
+        }
+      ],
+      "pass": true
+    },
+    "3_replay_kc_jaccard": {
+      "value": 0.7192348617881503,
+      "threshold": 0.5,
+      "pass": true
+    },
+    "4_differs_from_frozen_after_first_pulse": {
+      "first_pulse_observation": 3,
+      "different_after": 91,
+      "first_different_after": 4,
+      "different_before": 0,
+      "first_different_overall": 4,
+      "pass": true
+    }
+  },
+  "verdict": "\uc815\uc2dd \uc2e4\ud5d8 \uac00\ub2a5",
+  "failure_reasons": [],
+  "reference_roundtrip_arm_criteria": {
+    "1_trade_signals": {
+      "value": 7,
+      "threshold": 5,
+      "pass": true
+    },
+    "2_memory_changes_after_pulse": {
+      "pulses": 7,
+      "pulses_with_increase": 0,
+      "steps": [
+        {
+          "observation": 3,
+          "before": 5,
+          "after": 5
+        },
+        {
+          "observation": 9,
+          "before": 5,
+          "after": 5
+        },
+        {
+          "observation": 65,
+          "before": 3424,
+          "after": 3424
+        },
+        {
+          "observation": 81,
+          "before": 3432,
+          "after": 3432
+        },
+        {
+          "observation": 85,
+          "before": 3445,
+          "after": 3445
+        },
+        {
+          "observation": 86,
+          "before": 3445,
+          "after": 3445
+        },
+        {
+          "observation": 108,
+          "before": 3450,
+          "after": 3450
+        }
+      ],
+      "pass": false
+    },
+    "3_replay_kc_jaccard": {
+      "value": null,
+      "threshold": 0.5,
+      "pass": false
+    },
+    "4_differs_from_frozen_after_first_pulse": {
+      "first_pulse_observation": 3,
+      "different_after": 100,
+      "first_different_after": 12,
+      "different_before": 0,
+      "first_different_overall": 12,
+      "pass": true
+    }
+  },
+  "checks": {
+    "same_tape": true,
+    "full_tape": true,
+    "fresh_start": true,
+    "learning_on_off": true,
+    "reinforcement_modes": true,
+    "finished_with_memory_record": true,
+    "frozen_memory_unchanged": true,
+    "no_halts": true,
+    "signal_is_sign_of_realized_pnl": true,
+    "fifo_matches_ledger": true,
+    "replay_only_in_replay_arm": true,
+    "replay_shows_first_fifo_buy_chart": true
+  },
+  "exploratory": {
+    "note": "Added after seeing the results. Not used for the verdict.",
+    "kc_set_size_first_observations": [
+      4,
+      4,
+      3,
+      1497,
+      1387,
+      1493
+    ],
+    "kc_jaccard_all_observation_pairs_mean": 0.8842359892317867,
+    "replay_kc_specificity": [
+      {
+        "observation": 3,
+        "buy_observation": 1,
+        "jaccard_buy": 0.5,
+        "jaccard_sell_observation": 0.5,
+        "jaccard_other_mean": 0.0065251545922384805,
+        "buy_rank": 2,
+        "of": 180
+      },
+      {
+        "observation": 88,
+        "buy_observation": 3,
+        "jaccard_buy": 0.0,
+        "jaccard_sell_observation": 0.9187374076561451,
+        "jaccard_other_mean": 0.9132967020786732,
+        "buy_rank": 178,
+        "of": 180
+      },
+      {
+        "observation": 92,
+        "buy_observation": 19,
+        "jaccard_buy": 0.9089108910891089,
+        "jaccard_sell_observation": 0.8781594296824368,
+        "jaccard_other_mean": 0.8943261864291269,
+        "buy_rank": 93,
+        "of": 180
+      },
+      {
+        "observation": 96,
+        "buy_observation": 23,
+        "jaccard_buy": 0.892049127343245,
+        "jaccard_sell_observation": 0.8959537572254336,
+        "jaccard_other_mean": 0.8892602689885596,
+        "buy_rank": 150,
+        "of": 180
+      },
+      {
+        "observation": 109,
+        "buy_observation": 58,
+        "jaccard_buy": 0.9358541525995948,
+        "jaccard_sell_observation": 0.924643584521385,
+        "jaccard_other_mean": 0.910765426984611,
+        "buy_rank": 27,
+        "of": 180
+      },
+      {
+        "observation": 124,
+        "buy_observation": 73,
+        "jaccard_buy": 0.8968462549277266,
+        "jaccard_sell_observation": 0.9064406779661017,
+        "jaccard_other_mean": 0.9026108701986558,
+        "buy_rank": 172,
+        "of": 180
+      },
+      {
+        "observation": 142,
+        "buy_observation": 84,
+        "jaccard_buy": 0.9009836065573771,
+        "jaccard_sell_observation": 0.8829300196206671,
+        "jaccard_other_mean": 0.9034260818533008,
+        "buy_rank": 166,
+        "of": 180
+      }
+    ],
+    "pulse_observations": [
+      {
+        "observation": 3,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": 9.357929229736328e-06,
+        "edges_changed_in_replay_step": 5,
+        "edges_changed_in_regular_step": 5
+      },
+      {
+        "observation": 88,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": -0.016661882400512695,
+        "edges_changed_in_replay_step": 2995,
+        "edges_changed_in_regular_step": 3012
+      },
+      {
+        "observation": 92,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": -0.017457306385040283,
+        "edges_changed_in_replay_step": 3008,
+        "edges_changed_in_regular_step": 3006
+      },
+      {
+        "observation": 96,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": -0.011938691139221191,
+        "edges_changed_in_replay_step": 3019,
+        "edges_changed_in_regular_step": 2983
+      },
+      {
+        "observation": 109,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": -0.0334017276763916,
+        "edges_changed_in_replay_step": 3006,
+        "edges_changed_in_regular_step": 3012
+      },
+      {
+        "observation": 124,
+        "changed_edges_increase": 0,
+        "mean_efficacy_change": -0.0017895698547363281,
+        "edges_changed_in_replay_step": 3007,
+        "edges_changed_in_regular_step": 3002
+      },
+      {
+        "observation": 142,
+        "changed_edges_increase": 1,
+        "mean_efficacy_change": -0.009689748287200928,
+        "edges_changed_in_replay_step": 3030,
+        "edges_changed_in_regular_step": 3019
+      }
+    ],
+    "no_pulse_observations": {
+      "count": 173,
+      "with_changed_edges_increase": 51,
+      "mean_abs_mean_efficacy_change": 0.0020051078300255573,
+      "mean_edges_changed_in_step": 2967.578034682081
+    },
+    "divergence": {
+      "portfolio vs frozen": {
+        "first_spike_difference_observation": 11,
+        "first_proposal_difference_observation": 13,
+        "observations_with_different_proposal": 84,
+        "compared_observations": 180
+      },
+      "roundtrip vs frozen": {
+        "first_spike_difference_observation": 2,
+        "first_proposal_difference_observation": 12,
+        "observations_with_different_proposal": 100,
+        "compared_observations": 180
+      },
+      "roundtrip-replay vs frozen": {
+        "first_spike_difference_observation": 2,
+        "first_proposal_difference_observation": 4,
+        "observations_with_different_proposal": 91,
+        "compared_observations": 180
+      },
+      "roundtrip vs roundtrip-replay": {
+        "first_spike_difference_observation": 3,
+        "first_proposal_difference_observation": 4,
+        "observations_with_different_proposal": 74,
+        "compared_observations": 180
+      }
+    },
+    "kc_spikes_first_observations": {
+      "portfolio": [
+        16,
+        14,
+        10,
+        13,
+        11,
+        11,
+        11,
+        10,
+        14,
+        10,
+        2146,
+        4477,
+        4587,
+        4556
+      ],
+      "frozen": [
+        16,
+        14,
+        10,
+        13,
+        11,
+        11,
+        11,
+        10,
+        14,
+        10,
+        2181,
+        4605,
+        4305,
+        4488
+      ],
+      "roundtrip": [
+        16,
+        14,
+        10,
+        13,
+        11,
+        11,
+        11,
+        10,
+        14,
+        10,
+        2165,
+        4593,
+        4553,
+        4285
+      ],
+      "roundtrip-replay": [
+        16,
+        14,
+        11,
+        5909,
+        4309,
+        4680,
+        4521,
+        4525,
+        4538,
+        4560,
+        4404,
+        4445,
+        4562,
+        4461
+      ]
+    }
+  }
+}
