@@ -82,6 +82,14 @@ def main():
         help="Control: deliver this fly run's recorded reinforcement in shuffled order, ignoring own P&L (needs --replay)",
     )
     run.add_argument("--shuffle-seed", type=int, help="Seed for --shuffle-reinforcement")
+    run.add_argument(
+        "--reinforcement",
+        choices=["portfolio", "roundtrip", "roundtrip-replay"],
+        default="portfolio",
+        help="portfolio = marked-to-bid P&L each observation (default). Paper experiments: "
+        "roundtrip = realized FIFO P&L of each filled sell; roundtrip-replay also replays "
+        "the first matched buy's chart with the pulse (docs/roundtrip.md)",
+    )
     tape = sub.add_parser("tape", help="Record a market tape for replay")
     tape.add_argument("--out", type=Path, required=True)
     tape.add_argument(
@@ -164,6 +172,13 @@ def main():
         p.error("Use --shuffle-reinforcement RUN together with --shuffle-seed N")
     if a.shuffle_reinforcement and (a.policy != "fly" or not a.replay):
         p.error("Shuffled reinforcement is a fly control; it needs --replay of the same tape")
+    if a.reinforcement != "portfolio" and (
+        a.live or a.policy != "fly" or a.shuffle_reinforcement
+    ):
+        p.error(
+            "Round-trip reinforcement is a paper fly experiment: not with --live, "
+            "a random policy or shuffled reinforcement"
+        )
     if a.fixture and a.replay:
         p.error("Choose --fixture or --replay")
     if a.policy == "random":
@@ -267,6 +282,13 @@ def main():
                 delivered_signals(a.shuffle_reinforcement, market.identity["sha256"]),
                 a.shuffle_seed,
             )
+        trade_level = a.reinforcement != "portfolio"
+        if trade_level:
+            from . import roundtrip
+
+            # FIFO lots are committed with each tick, so a restart rebooks
+            # exactly the orders settled after the last committed observation.
+            trades = (previous or {}).get("roundtrip_book") or roundtrip.new_state()
         cp = ledger.get("checkpoint")
         if cp:
             path = out / cp["file"]
@@ -288,6 +310,8 @@ def main():
             else None,
             "reinforcement": shuffle.describe()
             if shuffle
+            else roundtrip.DESCRIPTION[a.reinforcement]
+            if trade_level
             else "own marked-to-bid portfolio P&L"
             if fly
             else None,
@@ -345,11 +369,35 @@ def main():
             # A shuffled-reinforcement control ignores its own P&L signal.
             delivered = shuffle.signal(ledger.get("tick")) if shuffle else kind
             frame = market_frame(product, market.history[product], q.bid, q.ask)
+            if trade_level:
+                # Only the previous observation's sell fill, if any, earns a signal.
+                memory_before = controller.brain.memory()
+                trades, sale = roundtrip.sync(ledger.db, trades, ledger.get("tick"))
+                earned = delivered = roundtrip.signal(sale)
+                replayed = None
+                if sale and a.reinforcement == "roundtrip-replay":
+                    replayed = roundtrip.replay(controller, ledger.db, sale, delivered)
+                weights = controller.plastic_weights()
             neural = controller.observe(frame, delivered)
             signals = {
-                "reinforcement_earned": kind,
+                "reinforcement_earned": earned if trade_level else kind,
                 "reinforcement_delivered": delivered if fly else None,
             }
+            record = {}
+            if trade_level:
+                record["roundtrip"] = {
+                    "portfolio_signal": kind,
+                    "sale": sale,
+                    "realized_pnl_before_fees": sale and sale["before_fees"],
+                    "realized_pnl_after_fees": sale and sale["after_fees"],
+                    "replay": replayed,
+                    "buy_observation": replayed and replayed["buy_observation"],
+                    "memory_before": memory_before,
+                    "kc_active": controller.kc_active(),
+                    "edges_changed_in_step": roundtrip.edges_changed(
+                        weights, controller.plastic_weights()
+                    ),
+                }
             # Checkpoint + accounting anchor are committed before any trade.
             # Two slots keep the last committed snapshot safe during a crash.
             slot = ledger.get("tick") % 2
@@ -368,6 +416,8 @@ def main():
                 "market_history": market.history,
                 "fixture_tick": getattr(market, "tick", None),
             }
+            if trade_level:
+                observation["roundtrip_book"] = trades
             ledger.commit_tick(equity, checkpoint_info, observation)
             order = {"status": "HOLD"}
             if neural["side"] != "HOLD":
@@ -393,6 +443,7 @@ def main():
                 "equity_usdc": str(equity),
                 "pnl_delta_usdc": str(delta),
                 **signals,
+                **record,
                 "neural": neural,
                 "execution": order,
             }
@@ -438,6 +489,11 @@ def main():
                 "memory": memory,
                 "signals_delivered": {s: sent.count(s) for s in SIGNALS},
             }
+            if trade_level:
+                # A sell at the last observation has no next observation to signal.
+                _, last = roundtrip.sync(ledger.db, trades, ledger.get("tick"))
+                final["reinforcement"] = a.reinforcement
+                final["roundtrip"] = roundtrip.summary(rows, last)
             (out / "final.json").write_text(json.dumps(final, indent=2) + "\n")
             print(json.dumps({"final": final}), flush=True)
     except KeyboardInterrupt:

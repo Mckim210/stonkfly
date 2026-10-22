@@ -56,6 +56,27 @@ class FlyController:
         )
 
     def observe(self, rgb, reinforcement):
+        counts, wall, delivered = self._integrate(rgb, reinforcement)
+        return {
+            **self.decoder.decode(counts, self.s.neural_ms / 1000),
+            **self._report(rgb, reinforcement, counts, wall, delivered),
+        }
+
+    def replay(self, rgb, reinforcement):
+        """The same neural step as observe, never decoded: it cannot propose a trade."""
+        counts, wall, delivered = self._integrate(rgb, reinforcement)
+        return self._report(rgb, reinforcement, counts, wall, delivered)
+
+    def kc_active(self):
+        """Graph indices of the KCs that spiked in the last observe or replay step."""
+        kc = self.brain.circuit["kc"]
+        return [int(i) for i in kc[self.brain.counts[kc] > 0]]
+
+    def plastic_weights(self):
+        b = self.brain
+        return b.weight[b.circuit["edges"]].copy()
+
+    def _integrate(self, rgb, reinforcement):
         if reinforcement not in ("none", "reward", "aversive"):
             raise ValueError("Unknown reinforcement")
         b = self.brain
@@ -81,8 +102,11 @@ class FlyController:
                 delivered += n
                 pulse -= n
         b.counts[:] = counts
+        return counts, wall, delivered
+
+    def _report(self, rgb, reinforcement, counts, wall, delivered):
+        b = self.brain
         return {
-            **self.decoder.decode(counts, self.s.neural_ms / 1000),
             "brain_ms": b.sim_ms,
             "compute_seconds": wall,
             "stimulus": reinforcement,

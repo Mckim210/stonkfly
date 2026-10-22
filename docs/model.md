@@ -44,6 +44,8 @@ At the next observation, equity is cash plus holdings marked at the current bid.
 
 This is feedback about portfolio value, not evidence that the latest action caused that change. Holding an asset can produce either signal. Fees count as a loss. Deposits or unexplained balance changes halt execution instead of becoming rewards. Positive P&L need not be realized profit.
 
+A paper-only experimental alternative signs the pulse by the realized FIFO P&L of each filled sell instead, optionally replaying the buy-time chart: [trade-level reinforcement](roundtrip.md).
+
 The candidate memory rule acts on **7,835 existing KC→MBON07/MBON11 edges**. It adapts a baseline-centered anti-Hebbian rate rule from [Huang, Luo et al., 2024](https://doi.org/10.1038/s41586-024-07819-w): recent KC activity followed by dopamine tends to depress eligible connections; the reverse timing can potentiate them. Actual network spikes supply KC/DAN rates in bins of at most 10 ms. No price or profit value directly edits a synaptic weight.
 
 The 1-second eligibility traces, 1,800-second memory decay, 50 ms efficacy filter, gain 0.001 and efficacy bounds of 0.1–2× baseline are declared model choices. The anatomy-derived DAN-to-MBON contact fractions distribute modulation within each compartment. They are not measured dopamine concentrations or receptor kinetics.

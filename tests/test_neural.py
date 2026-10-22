@@ -72,6 +72,12 @@ def test_full_graph_sensory_reinforcement_checkpoint(tmp_path):
     assert reward["reward_spikes"] > 0 and reward["stimulus_ms"] == 200
     assert reward["KC_spikes"] > 0 and reward["memory"]["changed_edges"] > 0
     reward_weights = c.brain.weight[c.brain.circuit["edges"]].copy()
+    kcs = c.kc_active()
+    c.restore(tmp_path / "before.npz")
+    # A replay step is the same neural integration, only never decoded.
+    again = c.replay(white, "reward")
+    assert "side" not in again and again["spike_sha256"] == reward["spike_sha256"]
+    assert again["memory"] == reward["memory"] and c.kc_active() == kcs and kcs
     c.restore(tmp_path / "before.npz")
     control = c.observe(white, "none")
     assert not np.array_equal(reward_weights, c.brain.weight[c.brain.circuit["edges"]])
